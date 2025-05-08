@@ -1,20 +1,20 @@
-# Use Node.js base image
+# Gebruik een officiële Node.js-image
 FROM node:22
 
-# Create app directory
+# Stel de werkdirectory in de container in
 WORKDIR /usr/src/app
 
-# Copy package files
+# Kopieer package.json en package-lock.json (indien aanwezig) naar de container
 COPY package*.json ./
 
-# Install dependencies
+# Installeer de projectafhankelijkheden
 RUN npm install
 
-# Copy the rest of the app
+# Kopieer de rest van de applicatiebestanden naar de container
 COPY . .
 
-# Expose the port
+# Expose de poort waarop de app draait
 EXPOSE 3000
 
-# Run the server
-CMD ["npm", "start"]
+# Start de app
+CMD ["node", "index.js"]

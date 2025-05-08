@@ -1,18 +1,37 @@
+import socketio
 from flask import Flask, jsonify, request
-import socketio  # Socket.IO client
 
+# Initialiseer de Flask-app
 app = Flask(__name__)
+
+# Initialiseer de Socket.IO-server
+sio = socketio.Server()
+
+# Voeg de Socket.IO-server toe aan de Flask-app
+app.wsgi_app = socketio.WSGIApp(sio, app.wsgi_app)
 
 new_data = {}
 
-# Socket.IO client setup
-sio = socketio.Client()
 
-# Verbind met de Socket.IO-server op poort 3000
-try:
-    sio.connect("http://192.168.1.108:3000")
-except socketio.exceptions.ConnectionError as e:
-    print("Socket.IO server not reachable:", e)
+# Event handler voor wanneer een client verbinding maakt
+@sio.event
+def connect(sid, environ):
+    print(f"Client verbonden: {sid}")
+
+
+# Event handler voor wanneer een client disconnect
+@sio.event
+def disconnect(sid):
+    print(f"Client ontkoppeld: {sid}")
+
+
+# Event handler voor het ontvangen van de data van de client
+@sio.event
+def new_data_event(sid, data):
+    print(f"Ontvangen data: {data}")
+    # Voeg de ontvangen data toe aan de globale data
+    global new_data
+    new_data = data
 
 
 @app.route("/")
@@ -21,25 +40,10 @@ def home():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Welcome</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                text-align: center;
-                margin-top: 50px;
-            }
-            h1 {
-                color: #4CAF50;
-            }
-            p {
-                color: #555;
-            }
-        </style>
+        <title>Flask-Socket.IO Server</title>
     </head>
     <body>
-        <h1>Welcome to the Flask API!</h1>
-        <p>This is a simple API built with Flask.</p>
-        <p>Use the endpoints to interact with the application.</p>
+        <h1>Welcome to the Flask Socket.IO Server!</h1>
     </body>
     </html>
     """
@@ -50,7 +54,7 @@ def add_data():
     global new_data
     new_data = request.get_json()
 
-    # Emit the data to the Socket.IO server
+    # Emit de data naar alle verbonden clients via Socket.IO
     sio.emit("new_data", new_data)
     return jsonify(new_data), 201
 
