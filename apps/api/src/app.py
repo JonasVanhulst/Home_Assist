@@ -1,8 +1,18 @@
 from flask import Flask, jsonify, request
+import socketio  # Socket.IO client
 
 app = Flask(__name__)
 
 new_data = {}
+
+# Socket.IO client setup
+sio = socketio.Client()
+
+# Verbind met de Socket.IO-server op poort 3000
+try:
+    sio.connect("http://192.168.1.108:3000")
+except socketio.exceptions.ConnectionError as e:
+    print("Socket.IO server not reachable:", e)
 
 
 @app.route("/")
@@ -39,6 +49,9 @@ def home():
 def add_data():
     global new_data
     new_data = request.get_json()
+
+    # Emit the data to the Socket.IO server
+    sio.emit("new_data", new_data)
     return jsonify(new_data), 201
 
 
