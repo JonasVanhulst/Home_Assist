@@ -1,43 +1,39 @@
 import { LineChart } from "@mui/x-charts/LineChart";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import socket from "./socket";
 
-function generateDataPoint(x: number) {
-  const y = +(Math.random() * 20 - 3).toFixed(2); // 0 to 40
-  x = +x.toFixed(2);
-  return { x, y };
-}
+type DataPoint = { x: number; y: number };
 
-export default function BasicLineChart() {
-  const [dataset, setDataset] = useState(() => {
-    // Initialize with one point
-    return [generateDataPoint(1)];
-  });
+export default function HumidityLineChart() {
+  const [dataset, setDataset] = useState<DataPoint[]>([]);
+  const counterRef = useRef(1); // persistente teller
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDataset((prevData) => {
-        const nextX =
-          prevData.length > 0 ? prevData[prevData.length - 1].x + 1 : 1;
-        const newData = generateDataPoint(nextX);
+    const handleNewData = (data: { humidity: number }) => {
+      if (typeof data.humidity === "number" && !isNaN(data.humidity)) {
+        const newPoint: DataPoint = {
+          x: counterRef.current++,
+          y: parseFloat(data.humidity.toFixed(2)),
+        };
 
-        // Keep only the last 20 points
-        const updatedDataset = [...prevData, newData].slice(-20);
+        setDataset((prev) => [...prev, newPoint].slice(-20)); // max 20 punten
+      }
+    };
 
-        return updatedDataset;
-      });
-    }, 6000); // 30 seconds
-
-    return () => clearInterval(interval);
+    socket.on("new_data", handleNewData);
+    return () => {
+      socket.off("new_data", handleNewData);
+    };
   }, []);
 
   return (
     <LineChart
       dataset={dataset}
-      xAxis={[{ dataKey: "x" }]}
-      yAxis={[{ min: 0, max: 40 }]}
-      series={[{ dataKey: "y", area: true }]}
+      xAxis={[{ label: "Metingen", dataKey: "x" }]}
+      yAxis={[{ label: "Vochtigheid (%)", min: 0, max: 100 }]}
+      series={[{ dataKey: "y", area: true, label: "Humidity" }]}
       height={300}
-      colors={["orange"]}
+      colors={["#00aaff"]}
     />
   );
 }

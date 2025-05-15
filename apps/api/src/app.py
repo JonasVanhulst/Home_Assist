@@ -1,69 +1,50 @@
 import socketio
 from flask import Flask, jsonify, request
+from flask_cors import CORS
+import eventlet
 
-# Initialiseer de Flask-app
+# Maak Flask-app
 app = Flask(__name__)
+CORS(app)  # CORS toestaan
 
-# Initialiseer de Socket.IO-server
-sio = socketio.Server()
-
-# Voeg de Socket.IO-server toe aan de Flask-app
+# Maak Socket.IO-server met CORS support
+sio = socketio.Server(cors_allowed_origins="*")
 app.wsgi_app = socketio.WSGIApp(sio, app.wsgi_app)
 
 new_data = {}
 
-
-# Event handler voor wanneer een client verbinding maakt
+# Socket.IO events
 @sio.event
 def connect(sid, environ):
     print(f"Client verbonden: {sid}")
 
-
-# Event handler voor wanneer een client disconnect
 @sio.event
 def disconnect(sid):
     print(f"Client ontkoppeld: {sid}")
 
-
-# Event handler voor het ontvangen van de data van de client
 @sio.event
 def new_data_event(sid, data):
-    print(f"Ontvangen data: {data}")
-    # Voeg de ontvangen data toe aan de globale data
     global new_data
+    print(f"Ontvangen data van client: {data}")
     new_data = data
+    sio.emit("new_data", data)
 
-
+# REST API routes
 @app.route("/")
 def home():
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Flask-Socket.IO Server</title>
-    </head>
-    <body>
-        <h1>Welcome to the Flask Socket.IO Server!</h1>
-    </body>
-    </html>
-    """
-
+    return "<h1>Flask Socket.IO Server draait</h1>"
 
 @app.route("/api/data", methods=["POST"])
 def add_data():
     global new_data
     new_data = request.get_json()
-
-    # Emit de data naar alle verbonden clients via Socket.IO
-    sio.emit("new_data", new_data)
+    sio.emit("new_data", new_data)  # Stuur naar clients
     return jsonify(new_data), 201
-
 
 @app.route("/api/data", methods=["GET"])
 def get_data():
-    global new_data
     return jsonify(new_data)
 
-
+# Start server via eventlet
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    eventlet.wsgi.server(eventlet.listen(('0.0.0.0', 5000)), app)
