@@ -2,3 +2,4 @@ flask
 python-socketio[client]
 eventlet 
 flask-cors
+influxdb-client[ciso]

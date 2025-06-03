@@ -13,6 +13,7 @@ import PageContainerBasic from "./Main_Grid";
 import VideoCameraFrontIcon from "@mui/icons-material/VideoCameraFront";
 import Agenda from "./agenda";
 import BiaxialBarChart from "./barChart";
+import HLSPlayer from "./cameraFeed";
 
 const NAVIGATION: Navigation = [
   {
@@ -93,7 +94,9 @@ export default function DashboardLayoutBasic(props: any) {
           {router.pathname === "/logging" && <div>Notifications</div>}
           {router.pathname === "/history" && <BiaxialBarChart />}
           {router.pathname === "/agenda" && <Agenda />}
-          {router.pathname === "/camera" && <div>Notifications</div>}
+          {router.pathname === "/camera" && (
+            <HLSPlayer url="http://localhost:8080/hls/streamkey.m3u8" />
+          )}
           {router.pathname === "/notifications" && <div>Notifications</div>}
         </PageContainer>
       </DashboardLayout>
